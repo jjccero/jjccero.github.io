@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+  <title>人工智障</title>
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+    <link rel="icon" href="https://avatars3.githubusercontent.com/u/42085609" />
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <el-card :body-style="{ padding: '0px' }" class="chat_card">
+        <div slot="header" class="card_header">
+          {{nickname}}
+        </div>
+        <div ref="messages" class="message_div">
+          <div v-for="(message,index) in messages" :key="index">
+            <div :style="messageStyle(message.isMe)">
+              <div>
+                {{message.isMe?"我":nickname}} {{message.gmtCreate}}
+              </div>
+              <div>{{message.msg}}</div>
+            </div>
+          </div>
+        </div>
+        <div class="input_div">
+          <el-input
+            v-model="msg"
+            placeholder="友善的对话是交流的起点(逃"
+            class="msg_input"
+            @keyup.enter.native="handleSendMessage"
+            autofocus
+            clearable
+          ></el-input>
+          <el-button @click="handleSendMessage" style="float: right;"
+            >发送</el-button
+          >
+        </div>
+      </el-card>
+      <div class="text_div">
+        <h2>玩归玩，闹归闹</h2>
+        <h1>别拿作者开玩笑</h1>
+        <div>
+          <span>Copyright 2020 </span>
+          <a href="https://github.com/jjccero">jjccero</a>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    new Vue({
+      el: "#app",
+      methods: {
+        handleSendMessage() {
+          if (this.msg === "") return;
+          const msg = this.msg;
+          this.messages.push({
+            isMe: true,
+            msg: msg,
+            gmtCreate: new Date(),
+          });
+          this.msg = "";
+          setTimeout(() => {
+            this.messages.push({
+              isMe: false,
+              msg: this.replace(msg),
+              gmtCreate: new Date(),
+            });
+          }, 1000);
+        },
+        replace(msg) {
+          this.rules.forEach((rule) => {
+            msg = msg.replace(rule[0], rule[1]);
+          });
+          return msg;
+        },
+        messageStyle(val) {
+          return {
+            color: val ? "green" : "blue",
+            textAlign: "left",
+            fontSize: "15px",
+            margin: "10px 10px 10px 10px",
+          };
+        },
+      },
+      data: function () {
+        return {
+          nickname: "宇宙机奥特曼",
+          msg: "",
+          messages: [],
+          rules: [
+            [new RegExp("\\?", "g"), "!"],
+            [new RegExp("？", "g"), "！"],
+            [new RegExp("是", "g"), "不是"],
+            [new RegExp("你", "g"), "_你"],
+            [new RegExp("我", "g"), "你"],
+            [new RegExp("_你", "g"), "我"],
+            [new RegExp("吗", "g"), ""],
+          ],
+        };
+      },
+      watch: {
+        messages(val) {
+          setTimeout(() => {
+            var obj = this.$refs.messages;
+            obj.scrollTop = obj.scrollHeight;
+          }, 100);
+        },
+      },
+    });
+  </script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f6f6f6;
+    }
+    .card_header {
+      text-align: center;
+    }
+    .chat_card {
+      margin: auto;
+      width: 598px;
+      margin-top: 10px;
+    }
+    .input_div {
+      margin: 10px 10px 10px 10px;
+      height: 40px;
+    }
+    .msg_input {
+      float: left;
+      width: 498px;
+    }
+    .message_div {
+      height: 669px;
+      border-bottom: 1px solid #ebeef5;
+      overflow: auto;
+    }
+    .text_div {
+      text-align: center;
+    }
+  </style>
+</html>
