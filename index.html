@@ -10,12 +10,27 @@
     <link rel="icon" href="https://avatars3.githubusercontent.com/u/42085609" />
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   </head>
   <body>
     <div id="app">
       <el-card :body-style="{ padding: '0px' }" class="chat_card">
         <div slot="header" class="card_header">
-          {{nickname}}
+          <span>{{nickname}}</span>
+          <el-dropdown @command="handleCommand" placement="bottom">
+            <span>
+              <i class="el-icon-arrow-down"></i>
+            </span>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item
+                v-for="item in functionList"
+                v-if="item.msgMe"
+                :command="item.functionCode"
+                :key="item.functionCode"
+                >{{item.msgMe}}</el-dropdown-item
+              >
+            </el-dropdown-menu>
+          </el-dropdown>
         </div>
         <div ref="messages" class="message_div">
           <div v-for="(message,index) in messages" :key="index">
@@ -63,14 +78,10 @@
             msg: msg,
             gmtCreate: new Date(),
           });
+          map = this.functionMap.get(this.functionCode);
+          map.func(this);
           this.msg = "";
-          setTimeout(() => {
-            this.messages.push({
-              isMe: false,
-              msg: this.replace(msg),
-              gmtCreate: new Date(),
-            });
-          }, 1000);
+          this.functionCode = map.next;
         },
         replace(msg) {
           this.rules.forEach((rule) => {
@@ -85,6 +96,17 @@
             fontSize: "15px",
             margin: "10px 10px 10px 10px",
           };
+        },
+        handleCommand(functionCode) {
+          this.functionCode = functionCode;
+          map = this.functionMap.get(functionCode);
+          if (map.msgMe) {
+            this.messages.push({
+              isMe: true,
+              msg: map.msgMe,
+              gmtCreate: new Date(),
+            });
+          }
         },
       },
       data: function () {
@@ -101,7 +123,96 @@
             [new RegExp("_你", "g"), "我"],
             [new RegExp("吗", "g"), ""],
           ],
+          functionMap: new Map([
+            [
+              "1-1",
+              {
+                msgMe: "我想走走。",
+                msg: "你要从哪里出发呢？",
+                next: "1-2",
+                func: function (_this) {
+                  _this.queryData["address"] = _this.msg;
+                },
+              },
+            ],
+            [
+              "1-2",
+              {
+                msg: "你要去哪里呢？",
+                next: "0",
+                func: function (_this) {
+                  _this.queryData["address"] += "|" + _this.msg;
+                  axios
+                    .get("https://restapi.amap.com/v3/geocode/geo", {
+                      params: _this.queryData,
+                    })
+                    .then((response) => {
+                      if (response.data.status === "1") {
+                        _this.queryData["origin"] =
+                          response.data.geocodes[0].location;
+                        _this.queryData["destination"] =
+                          response.data.geocodes[1].location;
+                        axios
+                          .get(
+                            "https://restapi.amap.com/v3/direction/walking",
+                            {
+                              params: _this.queryData,
+                            }
+                          )
+                          .then((response) => {
+                            if (response.data.status === "1") {
+                              msg = "俺找到了";
+                              response.data.route.paths[0].steps.forEach(
+                                (element) => {
+                                  msg += "，" + element.instruction;
+                                }
+                              );
+                              msg += "。";
+                              _this.messages.push({
+                                isMe: false,
+                                msg,
+                                gmtCreate: new Date(),
+                              });
+                            }
+                          });
+                      }
+                    });
+                },
+              },
+            ],
+            [
+              "0",
+              {
+                msgMe: "算了，没事。",
+                next: "0",
+                func: function (_this) {
+                  const msg = _this.msg;
+                  setTimeout(() => {
+                    _this.messages.push({
+                      isMe: false,
+                      msg: _this.replace(msg),
+                      gmtCreate: new Date(),
+                    });
+                  }, 500);
+                },
+              },
+            ],
+          ]),
+          functionCode: "0",
+          queryData: { key: "d37e3bd536e2ee509da2b3e2756f7d27", batch: true },
         };
+      },
+      computed: {
+        functionList() {
+          functionList = [];
+          this.functionMap.forEach((map, functionCode) => {
+            functionList.push({
+              functionCode,
+              msgMe: map.msgMe,
+            });
+          });
+          return functionList;
+        },
       },
       watch: {
         messages(val) {
@@ -109,6 +220,18 @@
             var obj = this.$refs.messages;
             obj.scrollTop = obj.scrollHeight;
           }, 100);
+        },
+        functionCode(val) {
+          map = this.functionMap.get(val);
+          if (map.msg) {
+            setTimeout(() => {
+              this.messages.push({
+                isMe: false,
+                msg: map.msg,
+                gmtCreate: new Date(),
+              });
+            }, 500);
+          }
         },
       },
     });
