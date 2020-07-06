@@ -7,7 +7,6 @@
       rel="stylesheet"
       href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
     />
-    <link rel="icon" href="https://avatars3.githubusercontent.com/u/42085609" />
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
@@ -17,20 +16,6 @@
       <el-card :body-style="{ padding: '0px' }" class="chat_card">
         <div slot="header" class="card_header">
           <span>{{nickname}}</span>
-          <el-dropdown @command="handleCommand" placement="bottom">
-            <span>
-              <i class="el-icon-arrow-down"></i>
-            </span>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item
-                v-for="item in functionList"
-                v-if="item.msgMe"
-                :command="item.functionCode"
-                :key="item.functionCode"
-                >{{item.msgMe}}</el-dropdown-item
-              >
-            </el-dropdown-menu>
-          </el-dropdown>
         </div>
         <div ref="messages" class="message_div">
           <div v-for="(message,index) in messages" :key="index">
@@ -51,6 +36,25 @@
             autofocus
             clearable
           ></el-input>
+          <el-dropdown
+            @command="handleCommand"
+            placement="top"
+            style="margin-left: 10px;"
+          >
+            <i
+              class="el-icon-arrow-up"
+              style="margin-top: 10px; font-size: 20px;"
+            ></i>
+            <el-dropdown-menu slot="dropdown">
+              <el-dropdown-item
+                v-for="item in functionList"
+                v-if="item.msgMe"
+                :command="item.functionCode"
+                :key="item.functionCode"
+                >{{item.msgMe}}</el-dropdown-item
+              >
+            </el-dropdown-menu>
+          </el-dropdown>
           <el-button @click="handleSendMessage" style="float: right;"
             >发送</el-button
           >
@@ -222,6 +226,7 @@
           }, 100);
         },
         functionCode(val) {
+          console.log(val);
           map = this.functionMap.get(val);
           if (map.msg) {
             setTimeout(() => {
@@ -256,7 +261,7 @@
     }
     .msg_input {
       float: left;
-      width: 498px;
+      width: 468px;
     }
     .message_div {
       height: 669px;
